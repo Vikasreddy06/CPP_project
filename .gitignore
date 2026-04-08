@@ -17,8 +17,9 @@ frontend/build/
 frontend/.env.local
 
 # Elastic Beanstalk
-.elasticbeanstalk/*
-!.elasticbeanstalk/config.yml
+**/.elasticbeanstalk/app_versions/
+**/.elasticbeanstalk/logs/
+**/.elasticbeanstalk/saved_configs/
 
 # LaTeX
 *.aux

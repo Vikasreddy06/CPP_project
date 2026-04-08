@@ -1,0 +1,6 @@
+
+# Elastic Beanstalk Files
+.elasticbeanstalk/app_versions/
+.elasticbeanstalk/logs/
+.elasticbeanstalk/saved_configs/
+!.elasticbeanstalk/config.yml
