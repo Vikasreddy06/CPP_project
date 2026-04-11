@@ -49,7 +49,7 @@ function Dashboard() {
         <div className="stats-grid">
           <div className="stat-card">
             <div className="stat-value">{stats.total_items}</div>
-            <div className="stat-label">Total Itemss</div>
+            <div className="stat-label">Total Items</div>
           </div>
           <div className="stat-card">
             <div className="stat-value" style={{ color: 'var(--danger)' }}>{stats.total_lost}</div>
