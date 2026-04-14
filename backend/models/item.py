@@ -29,9 +29,9 @@ class Item(db.Model):
     reporter_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
 
     # Relationships for matches
-    lost_matches = db.relationship("Match", foreign_keys="Match.lost_item_id", backref="lost_item", lazy=True)
-    found_matches = db.relationship("Match", foreign_keys="Match.found_item_id", backref="found_item", lazy=True)
-    claims = db.relationship("Claim", backref="item", lazy=True)
+    lost_matches = db.relationship("Match", foreign_keys="Match.lost_item_id", backref="lost_item", lazy=True, cascade="all, delete-orphan")
+    found_matches = db.relationship("Match", foreign_keys="Match.found_item_id", backref="found_item", lazy=True, cascade="all, delete-orphan")
+    claims = db.relationship("Claim", backref="item", lazy=True, cascade="all, delete-orphan")
 
     def to_dict(self):
         """Serialise the item to a JSON-friendly dictionary."""

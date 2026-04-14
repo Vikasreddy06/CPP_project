@@ -14,6 +14,7 @@ function Claims() {
   const [deleteId, setDeleteId] = useState(null);
   const [form, setForm] = useState({ item_id: '', claimant_id: '', description: '', evidence: '', status: 'pending' });
   const [error, setError] = useState('');
+  const [expandedId, setExpandedId] = useState(null);
 
   useEffect(() => { loadClaims(); }, []);
 
@@ -136,18 +137,45 @@ function Claims() {
             </thead>
             <tbody>
               {claims.map((c) => (
-                <tr key={c.id}>
-                  <td>{c.id}</td>
-                  <td>{c.item_id}</td>
-                  <td>{c.claimant_id}</td>
-                  <td><span className={`badge badge-${c.status}`}>{c.status}</span></td>
-                  <td>{c.priority}</td>
-                  <td>{c.date_claimed ? new Date(c.date_claimed).toLocaleDateString() : '-'}</td>
-                  <td>
-                    <button className="btn btn-sm btn-primary" onClick={() => startEdit(c)} style={{ marginRight: 4 }}>Edit</button>
-                    <button className="btn btn-sm btn-danger" onClick={() => setDeleteId(c.id)}>Delete</button>
-                  </td>
-                </tr>
+                <React.Fragment key={c.id}>
+                  <tr>
+                    <td>{c.id}</td>
+                    <td>{c.item_id}</td>
+                    <td>{c.claimant_id}</td>
+                    <td><span className={`badge badge-${c.status}`}>{c.status}</span></td>
+                    <td>{c.priority}</td>
+                    <td>{c.date_claimed ? new Date(c.date_claimed).toLocaleDateString() : '-'}</td>
+                    <td>
+                      <button className="btn btn-sm" onClick={() => setExpandedId(expandedId === c.id ? null : c.id)} style={{ marginRight: 4, backgroundColor: 'var(--primary-light, #e3f2fd)', color: 'var(--primary, #1565c0)' }}>{expandedId === c.id ? 'Hide' : 'View'}</button>
+                      <button className="btn btn-sm btn-primary" onClick={() => startEdit(c)} style={{ marginRight: 4 }}>Edit</button>
+                      <button className="btn btn-sm btn-danger" onClick={() => setDeleteId(c.id)}>Delete</button>
+                    </td>
+                  </tr>
+                  {expandedId === c.id && (
+                    <tr>
+                      <td colSpan="7" style={{ backgroundColor: '#f8f9fa', padding: '16px 20px' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                          <div>
+                            <strong style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: '#888' }}>Description</strong>
+                            <p style={{ margin: '4px 0 0', fontSize: '0.9rem' }}>{c.description || 'No description provided'}</p>
+                          </div>
+                          <div>
+                            <strong style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: '#888' }}>Evidence</strong>
+                            <p style={{ margin: '4px 0 0', fontSize: '0.9rem' }}>{c.evidence || 'No evidence provided'}</p>
+                          </div>
+                          <div>
+                            <strong style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: '#888' }}>Status</strong>
+                            <p style={{ margin: '4px 0 0' }}><span className={`badge badge-${c.status}`}>{c.status}</span></p>
+                          </div>
+                          <div>
+                            <strong style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: '#888' }}>Date Resolved</strong>
+                            <p style={{ margin: '4px 0 0', fontSize: '0.9rem' }}>{c.date_resolved ? new Date(c.date_resolved).toLocaleString() : 'Pending'}</p>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
               ))}
             </tbody>
           </table>
