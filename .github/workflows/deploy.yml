@@ -133,10 +133,16 @@ jobs:
             --policy-arn arn:aws:iam::aws:policy/AmazonRekognitionFullAccess 2>/dev/null || true
           aws iam attach-role-policy --role-name aws-elasticbeanstalk-ec2-role \
             --policy-arn arn:aws:iam::aws:policy/CloudWatchFullAccess 2>/dev/null || true
-          # Create images bucket if needed
+          # Create images bucket if needed and make objects publicly readable
           aws s3api head-bucket --bucket campus-lost-found-vikas-images 2>/dev/null || \
             aws s3api create-bucket --bucket campus-lost-found-vikas-images \
               --region eu-west-1 --create-bucket-configuration LocationConstraint=eu-west-1
+          aws s3api put-public-access-block --bucket campus-lost-found-vikas-images \
+            --public-access-block-configuration "BlockPublicAcls=false,IgnorePublicAcls=false,BlockPublicPolicy=false,RestrictPublicBuckets=false" || true
+          aws s3api put-bucket-policy --bucket campus-lost-found-vikas-images --policy '{
+            "Version":"2012-10-17",
+            "Statement":[{"Sid":"PublicRead","Effect":"Allow","Principal":"*","Action":"s3:GetObject","Resource":"arn:aws:s3:::campus-lost-found-vikas-images/*"}]
+          }' || true
       - name: Prepare deployment bundle
         run: |
           # Build a flat zip with backend files at root and campusfinder library included
