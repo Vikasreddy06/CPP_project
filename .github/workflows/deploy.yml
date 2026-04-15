@@ -116,22 +116,41 @@ jobs:
       - name: Install EB CLI
         run: pip install awsebcli
       - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_KEY }}
+          aws-region: eu-west-1
+      - name: Prepare deployment bundle
         run: |
-          mkdir -p ~/.aws
-          cat > ~/.aws/credentials <<EOF
-          [default]
-          aws_access_key_id=${{ secrets.AWS_ACCESS_KEY }}
-          aws_secret_access_key=${{ secrets.AWS_SECRET_KEY }}
-          EOF
-          cat > ~/.aws/config <<EOF
-          [default]
-          region=eu-west-1
-          EOF
+          # Build a flat zip with backend files at root and campusfinder library included
+          mkdir -p /tmp/eb-bundle
+          cp -r backend/* /tmp/eb-bundle/
+          cp -r backend/.ebextensions /tmp/eb-bundle/.ebextensions 2>/dev/null || true
+          # Install campusfinder library into the bundle so EB does not need PyPI
+          pip install --target /tmp/eb-bundle campusfinder/
+          # Remove the PyPI-only line from requirements.txt so pip install doesn't fail on EB
+          sed -i'' 's/^campusfinder-vikasreddy.*$//' /tmp/eb-bundle/requirements.txt
       - name: Deploy to Elastic Beanstalk
-        working-directory: backend
         run: |
-          eb use ${{ env.EB_ENVIRONMENT }}
-          eb deploy --timeout 20
+          cd /tmp/eb-bundle
+          zip -r /tmp/deploy.zip . -x "*.pyc" "*__pycache__*" "*tests*"
+          aws s3 cp /tmp/deploy.zip s3://campus-lost-found-vikas-deploy/deploy.zip \
+            --region ${{ env.AWS_REGION }} || true
+          # Create application version and update environment
+          aws elasticbeanstalk create-application-version \
+            --application-name ${{ env.EB_APPLICATION }} \
+            --version-label "build-${{ github.sha }}" \
+            --source-bundle S3Bucket=campus-lost-found-vikas-deploy,S3Key=deploy.zip \
+            --region ${{ env.AWS_REGION }}
+          aws elasticbeanstalk update-environment \
+            --environment-name ${{ env.EB_ENVIRONMENT }} \
+            --version-label "build-${{ github.sha }}" \
+            --region ${{ env.AWS_REGION }}
+      - name: Seed demo users
+        run: |
+          sleep 30
+          curl -s -X POST "http://campus-lost-found-vikas-prod.eba-vp5yhc3x.eu-west-1.elasticbeanstalk.com/api/auth/seed" -H "Content-Type: application/json" || echo "Seed request sent"
 
   # ------------------------------------------------------------------
   # Job 5: Deploy frontend to S3 static site (main only)

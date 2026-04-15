@@ -1,12 +1,13 @@
 /**
- * Main App component with routing configuration.
+ * Main App component with routing and authentication.
  * Author: Vikas Reddy Amanagantti (x25178849)
  */
 
 import React from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
+import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import LostItems from './pages/LostItems';
 import FoundItems from './pages/FoundItems';
@@ -17,25 +18,45 @@ import Matches from './pages/Matches';
 import Users from './pages/Users';
 import AWSStatus from './pages/AWSStatus';
 
+function isLoggedIn() {
+  return !!localStorage.getItem('clf_token');
+}
+
+function getUser() {
+  try {
+    return JSON.parse(localStorage.getItem('clf_user') || 'null');
+  } catch { return null; }
+}
+
+function ProtectedRoute({ children }) {
+  if (!isLoggedIn()) return <Navigate to="/login" />;
+  return children;
+}
+
 function App() {
+  const user = getUser();
+  const loggedIn = isLoggedIn();
+
   return (
     <div className="app">
-      <Navbar />
-      <main className="main-content">
+      {loggedIn && <Navbar />}
+      <main className={loggedIn ? "main-content" : ""}>
         <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/lost-items" element={<LostItems />} />
-          <Route path="/found-items" element={<FoundItems />} />
-          <Route path="/items/:id" element={<ItemDetail />} />
-          <Route path="/report" element={<ReportItem />} />
-          <Route path="/report/:type" element={<ReportItem />} />
-          <Route path="/claims" element={<Claims />} />
-          <Route path="/matches" element={<Matches />} />
-          <Route path="/users" element={<Users />} />
-          <Route path="/aws-status" element={<AWSStatus />} />
+          <Route path="/login" element={loggedIn ? <Navigate to="/" /> : <Login />} />
+          <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+          <Route path="/lost-items" element={<ProtectedRoute><LostItems /></ProtectedRoute>} />
+          <Route path="/found-items" element={<ProtectedRoute><FoundItems /></ProtectedRoute>} />
+          <Route path="/items/:id" element={<ProtectedRoute><ItemDetail /></ProtectedRoute>} />
+          <Route path="/report" element={<ProtectedRoute><ReportItem /></ProtectedRoute>} />
+          <Route path="/report/:type" element={<ProtectedRoute><ReportItem /></ProtectedRoute>} />
+          <Route path="/claims" element={<ProtectedRoute><Claims /></ProtectedRoute>} />
+          <Route path="/matches" element={<ProtectedRoute><Matches /></ProtectedRoute>} />
+          <Route path="/users" element={<ProtectedRoute><Users /></ProtectedRoute>} />
+          <Route path="/aws-status" element={<ProtectedRoute><AWSStatus /></ProtectedRoute>} />
+          <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </main>
-      <Footer />
+      {loggedIn && <Footer />}
     </div>
   );
 }

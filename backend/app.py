@@ -18,6 +18,7 @@ from flask_cors import CORS
 from config import config_by_name
 from models.database import db, init_db
 from routes import item_bp, claim_bp, user_bp, match_bp, aws_bp
+from routes.auth_routes import auth_bp
 from services import (
     DynamoDBService,
     S3Service,
@@ -71,6 +72,7 @@ def create_app(config_name=None):
     }
 
     # Register route blueprints
+    app.register_blueprint(auth_bp)
     app.register_blueprint(item_bp)
     app.register_blueprint(claim_bp)
     app.register_blueprint(user_bp)
