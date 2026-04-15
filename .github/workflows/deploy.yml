@@ -135,8 +135,12 @@ jobs:
         run: |
           cd /tmp/eb-bundle
           zip -r /tmp/deploy.zip . -x "*.pyc" "*__pycache__*" "*tests*"
+          aws s3api head-bucket --bucket campus-lost-found-vikas-deploy 2>/dev/null || \
+            aws s3api create-bucket --bucket campus-lost-found-vikas-deploy \
+              --region ${{ env.AWS_REGION }} \
+              --create-bucket-configuration LocationConstraint=${{ env.AWS_REGION }}
           aws s3 cp /tmp/deploy.zip s3://campus-lost-found-vikas-deploy/deploy.zip \
-            --region ${{ env.AWS_REGION }} || true
+            --region ${{ env.AWS_REGION }}
           # Create application version and update environment
           aws elasticbeanstalk create-application-version \
             --application-name ${{ env.EB_APPLICATION }} \
