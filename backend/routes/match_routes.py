@@ -6,7 +6,8 @@ Author: Vikas Reddy Amanagantti (x25178849)
 """
 
 from flask import Blueprint, request, jsonify
-from models import db, Match
+from models import db, Match, Item
+from campusfinder import ItemMatcher
 
 match_bp = Blueprint("matches", __name__)
 
@@ -50,15 +51,28 @@ def create_match():
         if not data:
             return jsonify({"error": "Request body is required"}), 400
 
-        required = ["lost_item_id", "found_item_id", "confidence_score"]
-        for field in required:
-            if field not in data:
-                return jsonify({"error": f"'{field}' is required"}), 400
+        if "lost_item_id" not in data or "found_item_id" not in data:
+            return jsonify({"error": "'lost_item_id' and 'found_item_id' are required"}), 400
+
+        # Fetch both items to auto-calculate confidence
+        lost_item = Item.query.get(data["lost_item_id"])
+        found_item = Item.query.get(data["found_item_id"])
+        if not lost_item:
+            return jsonify({"error": "Lost item not found"}), 404
+        if not found_item:
+            return jsonify({"error": "Found item not found"}), 404
+
+        # Auto-calculate confidence using the library
+        matcher = ItemMatcher()
+        lost_dict = lost_item.to_dict()
+        found_dict = found_item.to_dict()
+        confidence = matcher.compute_match_score(lost_dict, found_dict)
+        confidence = round(confidence, 4)
 
         match = Match(
             lost_item_id=data["lost_item_id"],
             found_item_id=data["found_item_id"],
-            confidence_score=data["confidence_score"],
+            confidence_score=confidence,
             match_type=data.get("match_type", "text"),
             status=data.get("status", "pending"),
             notes=data.get("notes"),
