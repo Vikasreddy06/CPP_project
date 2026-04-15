@@ -121,6 +121,22 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_KEY }}
           aws-region: eu-west-1
+      - name: Ensure EB role has S3 and SNS access
+        run: |
+          aws iam attach-role-policy --role-name aws-elasticbeanstalk-ec2-role \
+            --policy-arn arn:aws:iam::aws:policy/AmazonS3FullAccess 2>/dev/null || true
+          aws iam attach-role-policy --role-name aws-elasticbeanstalk-ec2-role \
+            --policy-arn arn:aws:iam::aws:policy/AmazonSNSFullAccess 2>/dev/null || true
+          aws iam attach-role-policy --role-name aws-elasticbeanstalk-ec2-role \
+            --policy-arn arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess 2>/dev/null || true
+          aws iam attach-role-policy --role-name aws-elasticbeanstalk-ec2-role \
+            --policy-arn arn:aws:iam::aws:policy/AmazonRekognitionFullAccess 2>/dev/null || true
+          aws iam attach-role-policy --role-name aws-elasticbeanstalk-ec2-role \
+            --policy-arn arn:aws:iam::aws:policy/CloudWatchFullAccess 2>/dev/null || true
+          # Create images bucket if needed
+          aws s3api head-bucket --bucket campus-lost-found-vikas-images 2>/dev/null || \
+            aws s3api create-bucket --bucket campus-lost-found-vikas-images \
+              --region eu-west-1 --create-bucket-configuration LocationConstraint=eu-west-1
       - name: Prepare deployment bundle
         run: |
           # Build a flat zip with backend files at root and campusfinder library included
