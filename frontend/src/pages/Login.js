@@ -10,8 +10,8 @@ const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5001';
 
 const demoCreds = [
   { label: 'Admin', email: 'admin@campus.ie', password: 'Admin123!', color: '#e94560' },
-  { label: 'Staff', email: 'staff@campus.ie', password: 'Staff123!', color: '#f59e0b' },
-  { label: 'Student', email: 'student@campus.ie', password: 'Student123!', color: '#3b82f6' },
+  { label: 'Student 1', email: 'student@campus.ie', password: 'Student123!', color: '#3b82f6' },
+  { label: 'Student 2', email: 'student2@campus.ie', password: 'Student123!', color: '#10b981' },
 ];
 
 function Login() {
