@@ -5,7 +5,7 @@
 
 import React, { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { itemsApi } from '../services/api';
+import { itemsApi, awsApi } from '../services/api';
 
 function ReportItem() {
   const navigate = useNavigate();
@@ -23,6 +23,20 @@ function ReportItem() {
   });
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+  const [uploading, setUploading] = useState(false);
+
+  function handleFileChange(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      setError('Image must be under 5 MB');
+      return;
+    }
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+  }
 
   function handleChange(e) {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -40,9 +54,20 @@ function ReportItem() {
     }
 
     try {
-      const created = await itemsApi.create(form);
+      let imageUrl = form.image_url;
+      // Upload image file to S3 if selected
+      if (imageFile) {
+        setUploading(true);
+        const fd = new FormData();
+        fd.append('file', imageFile);
+        const uploadRes = await awsApi.uploadImage(fd);
+        imageUrl = uploadRes.image_url || '';
+        setUploading(false);
+      }
+      const created = await itemsApi.create({ ...form, image_url: imageUrl });
       navigate(`/items/${created.id}`);
     } catch (err) {
+      setUploading(false);
       setError(err.message || 'Failed to create item');
     } finally {
       setSubmitting(false);
@@ -112,15 +137,19 @@ function ReportItem() {
                 placeholder="e.g. email or phone" />
             </div>
             <div className="form-group">
-              <label>Image URL</label>
-              <input name="image_url" value={form.image_url} onChange={handleChange}
-                placeholder="http://..." />
+              <label>Upload Photo</label>
+              <input type="file" accept="image/*" onChange={handleFileChange}
+                style={{ padding: '6px 0' }} />
+              {imagePreview && (
+                <img src={imagePreview} alt="Preview" style={{ maxWidth: 200, borderRadius: 8, marginTop: 8 }} />
+              )}
+              {uploading && <p style={{ fontSize: '0.85rem', color: 'var(--primary)' }}>Uploading to S3...</p>}
             </div>
           </div>
 
           <button type="submit" className="btn btn-primary" disabled={submitting}
             style={{ marginTop: 8 }}>
-            {submitting ? 'Submitting...' : 'Submit Report'}
+            {uploading ? 'Uploading image...' : submitting ? 'Submitting...' : 'Submit Report'}
           </button>
         </form>
       </div>
