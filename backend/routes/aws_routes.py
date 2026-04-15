@@ -55,12 +55,17 @@ def analyse_image():
     """Run Rekognition label detection on an uploaded image."""
     try:
         rekognition = current_app.config["AWS_SERVICES"]["rekognition"]
-        data = request.get_json()
-        # Accept either raw bytes or a placeholder for mock mode
-        image_bytes = b"mock-image-bytes"
-        if data and "image_data" in data:
-            import base64
-            image_bytes = base64.b64decode(data["image_data"])
+
+        # Accept file upload (multipart) or base64 JSON
+        if "file" in request.files:
+            image_bytes = request.files["file"].read()
+        else:
+            data = request.get_json()
+            if data and "image_data" in data:
+                import base64
+                image_bytes = base64.b64decode(data["image_data"])
+            else:
+                image_bytes = b"mock-image-bytes"
 
         result = rekognition.analyse_item_image(image_bytes)
         return jsonify(result), 200

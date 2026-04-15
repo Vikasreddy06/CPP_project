@@ -26,8 +26,10 @@ function ReportItem() {
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const [analysing, setAnalysing] = useState(false);
+  const [detectedLabels, setDetectedLabels] = useState([]);
 
-  function handleFileChange(e) {
+  async function handleFileChange(e) {
     const file = e.target.files[0];
     if (!file) return;
     if (file.size > 5 * 1024 * 1024) {
@@ -36,6 +38,29 @@ function ReportItem() {
     }
     setImageFile(file);
     setImagePreview(URL.createObjectURL(file));
+
+    // Run Rekognition analysis on the uploaded image
+    try {
+      setAnalysing(true);
+      setDetectedLabels([]);
+      const fd = new FormData();
+      fd.append('file', file);
+      const analysis = await awsApi.analyseImageFile(fd);
+      if (analysis && !analysis.error) {
+        setDetectedLabels(analysis.labels || []);
+        if (analysis.estimated_category) {
+          setForm((prev) => ({ ...prev, category: analysis.estimated_category }));
+        }
+        if (analysis.dominant_color && analysis.dominant_color !== 'unknown') {
+          const color = analysis.dominant_color.charAt(0).toUpperCase() + analysis.dominant_color.slice(1);
+          setForm((prev) => ({ ...prev, color }));
+        }
+      }
+    } catch (err) {
+      console.error('Image analysis failed:', err);
+    } finally {
+      setAnalysing(false);
+    }
   }
 
   function handleChange(e) {
@@ -142,6 +167,17 @@ function ReportItem() {
                 style={{ padding: '6px 0' }} />
               {imagePreview && (
                 <img src={imagePreview} alt="Preview" style={{ maxWidth: 200, borderRadius: 8, marginTop: 8 }} />
+              )}
+              {analysing && <p style={{ fontSize: '0.85rem', color: 'var(--primary)' }}>Analysing image with Rekognition...</p>}
+              {detectedLabels.length > 0 && (
+                <div style={{ marginTop: 8, padding: '8px 12px', background: '#f0f7ff', borderRadius: 8, fontSize: '0.85rem' }}>
+                  <strong>Rekognition detected:</strong>{' '}
+                  {detectedLabels.map((l, i) => (
+                    <span key={i} style={{ display: 'inline-block', background: '#e0edff', borderRadius: 4, padding: '2px 8px', margin: '2px 4px', fontSize: '0.8rem' }}>
+                      {l.Name} ({l.Confidence.toFixed(1)}%)
+                    </span>
+                  ))}
+                </div>
               )}
               {uploading && <p style={{ fontSize: '0.85rem', color: 'var(--primary)' }}>Uploading to S3...</p>}
             </div>

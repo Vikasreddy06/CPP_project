@@ -95,6 +95,9 @@ export const awsApi = {
     fetch(`${API_BASE}/api/aws/upload-image`, { method: 'POST', body: formData })
       .then((r) => r.json()),
   analyseImage: (data) => request('/api/aws/analyse-image', { method: 'POST', body: JSON.stringify(data) }),
+  analyseImageFile: (formData) =>
+    fetch(`${API_BASE}/api/aws/analyse-image`, { method: 'POST', body: formData })
+      .then((r) => r.json()),
   triggerMatch: (data) => request('/api/aws/trigger-match', { method: 'POST', body: JSON.stringify(data) }),
   getNotifications: () => request('/api/aws/notifications'),
   getMetrics: () => request('/api/aws/metrics'),

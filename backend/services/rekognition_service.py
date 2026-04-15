@@ -8,7 +8,101 @@ Author: Vikas Reddy Amanagantti (x25178849)
 """
 
 import random
+import hashlib
 from datetime import datetime, timezone
+
+
+# Mock label sets representing different item types
+_MOCK_LABEL_SETS = [
+    {
+        "category": "clothing",
+        "color": "Blue",
+        "labels": [
+            {"Name": "Clothing", "Confidence": 97.5},
+            {"Name": "Shirt", "Confidence": 94.1},
+            {"Name": "T-Shirt", "Confidence": 91.3},
+            {"Name": "Blue", "Confidence": 88.7},
+            {"Name": "Fabric", "Confidence": 82.4},
+        ],
+    },
+    {
+        "category": "electronics",
+        "color": "Black",
+        "labels": [
+            {"Name": "Electronics", "Confidence": 95.2},
+            {"Name": "Phone", "Confidence": 91.8},
+            {"Name": "Mobile Phone", "Confidence": 89.3},
+            {"Name": "Black", "Confidence": 85.1},
+            {"Name": "Rectangle", "Confidence": 78.4},
+        ],
+    },
+    {
+        "category": "accessories",
+        "color": "Brown",
+        "labels": [
+            {"Name": "Accessories", "Confidence": 96.0},
+            {"Name": "Bag", "Confidence": 93.2},
+            {"Name": "Handbag", "Confidence": 89.5},
+            {"Name": "Brown", "Confidence": 86.3},
+            {"Name": "Leather", "Confidence": 80.1},
+        ],
+    },
+    {
+        "category": "books",
+        "color": "White",
+        "labels": [
+            {"Name": "Book", "Confidence": 96.8},
+            {"Name": "Paper", "Confidence": 92.4},
+            {"Name": "Text", "Confidence": 88.9},
+            {"Name": "White", "Confidence": 84.2},
+            {"Name": "Document", "Confidence": 79.6},
+        ],
+    },
+    {
+        "category": "keys",
+        "color": "Silver",
+        "labels": [
+            {"Name": "Key", "Confidence": 95.7},
+            {"Name": "Metal", "Confidence": 92.1},
+            {"Name": "Silver", "Confidence": 87.8},
+            {"Name": "Keychain", "Confidence": 83.5},
+            {"Name": "Steel", "Confidence": 78.9},
+        ],
+    },
+    {
+        "category": "electronics",
+        "color": "Silver",
+        "labels": [
+            {"Name": "Electronics", "Confidence": 96.3},
+            {"Name": "Laptop", "Confidence": 94.5},
+            {"Name": "Computer", "Confidence": 90.1},
+            {"Name": "Silver", "Confidence": 86.7},
+            {"Name": "Screen", "Confidence": 81.2},
+        ],
+    },
+    {
+        "category": "accessories",
+        "color": "Black",
+        "labels": [
+            {"Name": "Sunglasses", "Confidence": 95.9},
+            {"Name": "Eyewear", "Confidence": 92.6},
+            {"Name": "Accessories", "Confidence": 89.0},
+            {"Name": "Black", "Confidence": 85.4},
+            {"Name": "Plastic", "Confidence": 79.3},
+        ],
+    },
+    {
+        "category": "clothing",
+        "color": "Black",
+        "labels": [
+            {"Name": "Clothing", "Confidence": 96.8},
+            {"Name": "Jacket", "Confidence": 93.7},
+            {"Name": "Outerwear", "Confidence": 90.2},
+            {"Name": "Black", "Confidence": 87.1},
+            {"Name": "Fabric", "Confidence": 81.5},
+        ],
+    },
+]
 
 
 class RekognitionService:
@@ -32,6 +126,12 @@ class RekognitionService:
             import boto3
             self.client = boto3.client("rekognition", region_name=self.region)
 
+    def _pick_mock_labels(self, image_bytes):
+        """Pick a consistent mock label set based on image content hash."""
+        digest = hashlib.md5(image_bytes).hexdigest()
+        index = int(digest, 16) % len(_MOCK_LABEL_SETS)
+        return _MOCK_LABEL_SETS[index]
+
     def detect_labels(self, image_bytes):
         """
         Detect object labels in an image.
@@ -50,14 +150,8 @@ class RekognitionService:
             )
             return response.get("Labels", [])
         else:
-            # Return realistic mock labels
-            mock_labels = [
-                {"Name": "Electronics", "Confidence": 95.2},
-                {"Name": "Phone", "Confidence": 91.8},
-                {"Name": "Mobile Phone", "Confidence": 89.3},
-                {"Name": "Black", "Confidence": 85.1},
-                {"Name": "Rectangle", "Confidence": 78.4},
-            ]
+            label_set = self._pick_mock_labels(image_bytes)
+            mock_labels = label_set["labels"]
             self._analysis_log.append({
                 "type": "detect_labels",
                 "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -122,13 +216,20 @@ class RekognitionService:
         # Simple heuristic category mapping
         category_map = {
             "Phone": "electronics",
+            "Mobile Phone": "electronics",
             "Laptop": "electronics",
+            "Computer": "electronics",
             "Book": "books",
             "Key": "keys",
             "Sunglasses": "accessories",
+            "Eyewear": "accessories",
             "Bag": "accessories",
+            "Handbag": "accessories",
             "Jacket": "clothing",
             "Shirt": "clothing",
+            "T-Shirt": "clothing",
+            "Clothing": "clothing",
+            "Outerwear": "clothing",
         }
         category = "other"
         for label in label_names:
@@ -136,10 +237,26 @@ class RekognitionService:
                 category = category_map[label]
                 break
 
+        # Detect dominant color from labels
+        color_labels = [
+            "Black", "White", "Red", "Blue", "Green", "Yellow",
+            "Brown", "Silver", "Gold", "Orange", "Pink", "Grey", "Gray",
+        ]
+        dominant_color = "unknown"
+        for label in label_names:
+            if label in color_labels:
+                dominant_color = label.lower()
+                break
+
+        # In mock mode, use the pre-set color from the label set
+        if not self.use_aws:
+            label_set = self._pick_mock_labels(image_bytes)
+            dominant_color = label_set.get("color", dominant_color).lower()
+
         return {
             "labels": labels,
             "estimated_category": category,
-            "dominant_color": "black",
+            "dominant_color": dominant_color,
             "analysis_timestamp": datetime.now(timezone.utc).isoformat(),
         }
 
