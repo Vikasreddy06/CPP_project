@@ -8,6 +8,7 @@ import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import Login from './pages/Login';
+import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import LostItems from './pages/LostItems';
 import FoundItems from './pages/FoundItems';
@@ -58,6 +59,7 @@ function App() {
         <main className={user ? "main-content" : ""}>
           <Routes>
             <Route path="/login" element={user ? <Navigate to="/" /> : <Login />} />
+            <Route path="/register" element={user ? <Navigate to="/" /> : <Register />} />
             <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/lost-items" element={<ProtectedRoute><LostItems /></ProtectedRoute>} />
             <Route path="/found-items" element={<ProtectedRoute><FoundItems /></ProtectedRoute>} />

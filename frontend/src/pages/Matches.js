@@ -79,6 +79,13 @@ function Matches() {
     setShowForm(true);
   }
 
+  async function handleConfirm(matchId) {
+    try {
+      await matchesApi.update(matchId, { status: 'confirmed' });
+      loadMatches();
+    } catch { setError('Failed to confirm match'); }
+  }
+
   async function handleDelete() {
     try { await matchesApi.delete(deleteId); setDeleteId(null); loadMatches(); }
     catch { setError('Delete failed'); }
@@ -195,6 +202,9 @@ function Matches() {
                   <td>{m.match_type}</td>
                   <td><span className={`badge badge-${m.status}`}>{m.status}</span></td>
                   <td>
+                    {m.status === 'pending' && (
+                      <button className="btn btn-sm" onClick={() => handleConfirm(m.id)} style={{ marginRight: 4, background: '#16a34a', color: '#fff', border: 'none' }}>Confirm</button>
+                    )}
                     <button className="btn btn-sm btn-primary" onClick={() => startEdit(m)} style={{ marginRight: 4 }}>Edit</button>
                     <button className="btn btn-sm btn-danger" onClick={() => setDeleteId(m.id)}>Delete</button>
                   </td>

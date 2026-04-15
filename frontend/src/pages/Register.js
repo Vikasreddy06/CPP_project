@@ -1,5 +1,5 @@
 /**
- * Login page with role-based demo credential pills.
+ * Register page -- new user sign-up form.
  * Author: Vikas Reddy Amanagantti (x25178849)
  */
 
@@ -9,15 +9,12 @@ import { useAuth } from '../App';
 
 const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5001';
 
-const demoCreds = [
-  { label: 'Admin', email: 'admin@campus.ie', password: 'Admin123!', color: '#e94560' },
-  { label: 'Vikas', email: 'vikasreddy1510@gmail.com', password: 'Student123!', color: '#3b82f6' },
-  { label: 'Aja', email: 'ajapaisa4@gmail.com', password: 'Student123!', color: '#10b981' },
-];
-
-function Login() {
+function Register() {
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [studentId, setStudentId] = useState('');
   const [password, setPassword] = useState('');
+  const [confirm, setConfirm] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -26,15 +23,25 @@ function Login() {
   async function handleSubmit(e) {
     e.preventDefault();
     setError('');
+
+    if (password !== confirm) {
+      setError('Passwords do not match');
+      return;
+    }
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters');
+      return;
+    }
+
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/api/auth/login`, {
+      const res = await fetch(`${API_BASE}/api/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ name, email, password, student_id: studentId, role: 'student' }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Login failed');
+      if (!res.ok) throw new Error(data.error || 'Registration failed');
       login(data.user, data.token);
       navigate('/');
     } catch (err) {
@@ -44,58 +51,59 @@ function Login() {
     }
   }
 
-  function fillDemo(cred) {
-    setEmail(cred.email);
-    setPassword(cred.password);
-  }
-
   return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f0f2f5' }}>
       <div style={{ width: '100%', maxWidth: 420, margin: '0 16px' }}>
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
           <h1 style={{ fontSize: 28, fontWeight: 700, color: '#1a1a2e', margin: 0 }}>Campus Lost &amp; Found</h1>
-          <p style={{ color: '#888', fontSize: 14, marginTop: 4 }}>Sign in to report and track items</p>
+          <p style={{ color: '#888', fontSize: 14, marginTop: 4 }}>Create your account</p>
         </div>
 
         <div style={{ background: '#fff', borderRadius: 12, padding: 32, boxShadow: '0 2px 12px rgba(0,0,0,0.08)' }}>
-          <h2 style={{ fontSize: 18, fontWeight: 600, margin: '0 0 20px', color: '#333' }}>Sign In</h2>
+          <h2 style={{ fontSize: 18, fontWeight: 600, margin: '0 0 20px', color: '#333' }}>Sign Up</h2>
 
           {error && <div style={{ background: '#fee', color: '#c00', padding: '10px 14px', borderRadius: 8, marginBottom: 16, fontSize: 14 }}>{error}</div>}
 
           <form onSubmit={handleSubmit}>
             <div style={{ marginBottom: 16 }}>
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#555', marginBottom: 6 }}>Full Name</label>
+              <input type="text" value={name} onChange={e => setName(e.target.value)} required
+                placeholder="e.g. John Murphy"
+                style={{ width: '100%', padding: '10px 14px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14, boxSizing: 'border-box' }} />
+            </div>
+            <div style={{ marginBottom: 16 }}>
               <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#555', marginBottom: 6 }}>Email</label>
               <input type="email" value={email} onChange={e => setEmail(e.target.value)} required
-                placeholder="you@campus.ie"
+                placeholder="you@gmail.com"
+                style={{ width: '100%', padding: '10px 14px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14, boxSizing: 'border-box' }} />
+            </div>
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#555', marginBottom: 6 }}>Student ID</label>
+              <input type="text" value={studentId} onChange={e => setStudentId(e.target.value)} required
+                placeholder="e.g. x25178849"
+                style={{ width: '100%', padding: '10px 14px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14, boxSizing: 'border-box' }} />
+            </div>
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#555', marginBottom: 6 }}>Password</label>
+              <input type="password" value={password} onChange={e => setPassword(e.target.value)} required
+                placeholder="At least 6 characters"
                 style={{ width: '100%', padding: '10px 14px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14, boxSizing: 'border-box' }} />
             </div>
             <div style={{ marginBottom: 20 }}>
-              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#555', marginBottom: 6 }}>Password</label>
-              <input type="password" value={password} onChange={e => setPassword(e.target.value)} required
-                placeholder="Enter your password"
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#555', marginBottom: 6 }}>Confirm Password</label>
+              <input type="password" value={confirm} onChange={e => setConfirm(e.target.value)} required
+                placeholder="Re-enter password"
                 style={{ width: '100%', padding: '10px 14px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14, boxSizing: 'border-box' }} />
             </div>
             <button type="submit" disabled={loading}
               style={{ width: '100%', padding: '12px', background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 8, fontSize: 15, fontWeight: 600, cursor: 'pointer', opacity: loading ? 0.6 : 1 }}>
-              {loading ? 'Signing in...' : 'Sign In'}
+              {loading ? 'Creating account...' : 'Create Account'}
             </button>
           </form>
 
-          <div style={{ marginTop: 24, paddingTop: 20, borderTop: '1px solid #eee' }}>
-            <p style={{ fontSize: 12, fontWeight: 600, color: '#999', textTransform: 'uppercase', letterSpacing: 1, textAlign: 'center', marginBottom: 12 }}>Demo Accounts</p>
-            <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
-              {demoCreds.map(c => (
-                <button key={c.label} type="button" onClick={() => fillDemo(c)}
-                  style={{ padding: '6px 16px', fontSize: 13, fontWeight: 600, border: `2px solid ${c.color}`, background: `${c.color}10`, color: c.color, borderRadius: 20, cursor: 'pointer' }}>
-                  {c.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
           <div style={{ marginTop: 20, textAlign: 'center', fontSize: 14, color: '#666' }}>
-            Don't have an account?{' '}
-            <Link to="/register" style={{ color: '#3b82f6', fontWeight: 600, textDecoration: 'none' }}>Sign Up</Link>
+            Already have an account?{' '}
+            <Link to="/login" style={{ color: '#3b82f6', fontWeight: 600, textDecoration: 'none' }}>Sign In</Link>
           </div>
         </div>
       </div>
@@ -103,4 +111,4 @@ function Login() {
   );
 }
 
-export default Login;
+export default Register;

@@ -128,8 +128,8 @@ def seed_users():
     """Seed demo users for all three roles."""
     demo_users = [
         {"name": "Admin User", "email": "admin@campus.ie", "student_id": "ADMIN001", "role": "admin", "password": "Admin123!"},
-        {"name": "Alice Murphy", "email": "student@campus.ie", "student_id": "STU25001", "role": "student", "password": "Student123!"},
-        {"name": "Sean O'Brien", "email": "student2@campus.ie", "student_id": "STU25002", "role": "student", "password": "Student123!"},
+        {"name": "Vikas Reddy", "email": "vikasreddy1510@gmail.com", "student_id": "x25178849", "role": "student", "password": "Student123!"},
+        {"name": "Aja Paisa", "email": "ajapaisa4@gmail.com", "student_id": "x25178850", "role": "student", "password": "Student123!"},
     ]
     created = []
     for u in demo_users:

@@ -6,10 +6,12 @@
 import React, { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { itemsApi, awsApi } from '../services/api';
+import { useAuth } from '../App';
 
 function ReportItem() {
   const navigate = useNavigate();
   const { type } = useParams();
+  const { user } = useAuth();
 
   const [form, setForm] = useState({
     title: '',
@@ -89,7 +91,7 @@ function ReportItem() {
         imageUrl = uploadRes.image_url || '';
         setUploading(false);
       }
-      const created = await itemsApi.create({ ...form, image_url: imageUrl });
+      const created = await itemsApi.create({ ...form, image_url: imageUrl, reporter_id: user?.id || null });
       navigate(`/items/${created.id}`);
     } catch (err) {
       setUploading(false);

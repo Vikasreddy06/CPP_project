@@ -5,8 +5,8 @@ Supports filtering by status and match_type.
 Author: Vikas Reddy Amanagantti (x25178849)
 """
 
-from flask import Blueprint, request, jsonify
-from models import db, Match, Item
+from flask import Blueprint, request, jsonify, current_app
+from models import db, Match, Item, User
 from campusfinder import ItemMatcher
 
 match_bp = Blueprint("matches", __name__)
@@ -97,12 +97,34 @@ def update_match(match_id):
         if not data:
             return jsonify({"error": "Request body is required"}), 400
 
+        old_status = match.status
         updatable = ["confidence_score", "match_type", "status", "notes"]
         for field in updatable:
             if field in data:
                 setattr(match, field, data[field])
 
         db.session.commit()
+
+        # Send SNS email notification when match is confirmed
+        if data.get("status") == "confirmed" and old_status != "confirmed":
+            try:
+                sns = current_app.config["AWS_SERVICES"]["sns"]
+                lost_item = Item.query.get(match.lost_item_id)
+                found_item = Item.query.get(match.found_item_id)
+                if lost_item and found_item:
+                    # Subscribe the reporter's email and notify them
+                    if lost_item.reporter_id:
+                        reporter = User.query.get(lost_item.reporter_id)
+                        if reporter and reporter.email:
+                            sns.subscribe_email(reporter.email)
+                    sns.notify_match_found(
+                        lost_item.to_dict(),
+                        found_item.to_dict(),
+                        match.confidence_score,
+                    )
+            except Exception:
+                pass  # Don't fail the match update if notification fails
+
         return jsonify(match.to_dict()), 200
     except Exception as e:
         db.session.rollback()
