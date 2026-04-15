@@ -1,5 +1,5 @@
 """
-Tests for match routes -- covers full CRUD.
+Tests for match routes -- covers full CRUD with auto-calculated confidence.
 
 Author: Vikas Reddy Amanagantti (x25178849)
 """
@@ -19,12 +19,12 @@ def client():
     with app.test_client() as client:
         with app.app_context():
             db.create_all()
-            # Seed a lost and a found item
-            lost = Item(title="Lost Phone", description="Black iPhone 15",
-                        category="electronics", location="Library",
+            # Seed a lost and a found item with matching descriptions
+            lost = Item(title="Lost Phone", description="Black iPhone 15 Pro with clear case",
+                        category="electronics", color="black", location="Library",
                         item_type="lost")
-            found = Item(title="Found Phone", description="Black smartphone",
-                         category="electronics", location="Library entrance",
+            found = Item(title="Found Phone", description="Black iPhone found near library with case",
+                         category="electronics", color="black", location="Library entrance",
                          item_type="found")
             db.session.add_all([lost, found])
             db.session.commit()
@@ -43,7 +43,6 @@ def _create_match(client, **overrides):
     payload = {
         "lost_item_id": lost_id,
         "found_item_id": found_id,
-        "confidence_score": 0.85,
         "match_type": "combined",
     }
     payload.update(overrides)
@@ -54,12 +53,13 @@ def test_create_match(client):
     resp = _create_match(client)
     assert resp.status_code == 201
     data = resp.get_json()
-    assert data["confidence_score"] == 0.85
+    # Confidence is auto-calculated, should be between 0 and 1
+    assert 0 <= data["confidence_score"] <= 1
     assert data["status"] == "pending"
 
 
 def test_create_match_missing_fields(client):
-    resp = client.post("/api/matches", json={"confidence_score": 0.5})
+    resp = client.post("/api/matches", json={"notes": "incomplete"})
     assert resp.status_code == 400
 
 

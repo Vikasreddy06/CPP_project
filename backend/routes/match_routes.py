@@ -66,8 +66,8 @@ def create_match():
         matcher = ItemMatcher()
         lost_dict = lost_item.to_dict()
         found_dict = found_item.to_dict()
-        confidence = matcher.compute_match_score(lost_dict, found_dict)
-        confidence = round(confidence, 4)
+        result = matcher.compute_match_score(lost_dict, found_dict)
+        confidence = round(result["overall"], 4)
 
         match = Match(
             lost_item_id=data["lost_item_id"],
